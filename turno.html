@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="./manifest.json">
+    <title>Turnos - Mi Tienda</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Gestión de Turnos</h1>
+    <div>Empleado actual: <span id="empleadoActualDisplay">Nadie</span></div>
+    <hr>
+    <h3>Iniciar turno</h3>
+    <select id="selectEmpleado"><option value="Ana">Ana</option><option value="Luis">Luis</option></select>
+    <button id="btnIniciar">▶ Iniciar turno</button>
+    <hr>
+    <button id="btnCerrar">⏹ Cerrar turno</button>
+    <hr>
+    <h3>Cuadre de caja</h3>
+    <p>Ventas del turno (hoy): $<span id="totalVentasTurno">0</span></p>
+    <button id="btnRefrescarTotal">🔄 Refrescar total</button>
+    <br><br>
+    <label>Efectivo real: <input type="number" id="efectivoReal" step="0.01"></label>
+    <button id="btnCuadrar">🧾 Cuadrar</button>
+</div>
+<nav><a href="./index.html">Ventas</a><a href="./inventario.html">Inventario</a><a href="./turno.html">Turno</a></nav>
+<script>
+    let db = null;
+    function conectar() {
+        return new Promise((resolve) => {
+            if (db) resolve(db);
+            const req = indexedDB.open("TiendaDB", 3);
+            req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+            req.onerror = (e) => console.error("Error DB", e);
+        });
+    }
+
+    async function calcularTotal() {
+        const emp = localStorage.getItem("empleadoActual");
+        if (!emp) {
+            document.getElementById("totalVentasTurno").innerText = "0";
+            return 0;
+        }
+        await conectar();
+        const tx = db.transaction("ventas", "readonly");
+        const ventas = await new Promise(resolve => {
+            const req = tx.objectStore("ventas").getAll();
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve([]);
+        });
+        const hoy = new Date().toISOString().slice(0,10);
+        let total = 0;
+        for (let v of ventas) {
+            if (v.empleado === emp && v.fecha && v.fecha.startsWith(hoy)) {
+                total += v.total;
+            }
+        }
+        document.getElementById("totalVentasTurno").innerText = total.toFixed(2);
+        return total;
+    }
+
+    function actualizarUI() {
+        const emp = localStorage.getItem("empleadoActual");
+        document.getElementById("empleadoActualDisplay").innerText = emp || "Nadie";
+        calcularTotal();
+    }
+
+    // Eventos
+    document.getElementById("btnIniciar").onclick = () => {
+        const emp = document.getElementById("selectEmpleado").value;
+        localStorage.setItem("empleadoActual", emp);
+        if (window.actualizarTurnoUI) window.actualizarTurnoUI();
+        actualizarUI();
+        alert(`Turno iniciado para ${emp}`);
+    };
+    document.getElementById("btnCerrar").onclick = () => {
+        localStorage.removeItem("empleadoActual");
+        if (window.actualizarTurnoUI) window.actualizarTurnoUI();
+        actualizarUI();
+        alert("Turno cerrado");
+    };
+    document.getElementById("btnRefrescarTotal").onclick = () => calcularTotal();
+    document.getElementById("btnCuadrar").onclick = async () => {
+        const real = parseFloat(document.getElementById("efectivoReal").value);
+        const esperado = parseFloat(document.getElementById("totalVentasTurno").innerText);
+        if (isNaN(real)) return alert("Ingrese efectivo real");
+        alert(`Cuadre:\nEsperado: $${esperado.toFixed(2)}\nReal: $${real.toFixed(2)}\nDiferencia: $${(real-esperado).toFixed(2)}`);
+    };
+    window.addEventListener("DOMContentLoaded", actualizarUI);
+</script>
+<script> if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js'); </script>
+</body>
+</html>

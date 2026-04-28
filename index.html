@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="./manifest.json">
+    <title>Ventas - Mi Tienda</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Registrar venta</h1>
+    <div class="turno-info">Turno: <span id="empleadoActual">Sin iniciar</span></div>
+    <div class="busqueda">
+        <input type="text" id="buscarProducto" placeholder="Buscar producto">
+        <button id="btnBuscar">🔍 Buscar</button>
+        <button id="btnForzarRecarga" style="background-color: #888;">🔄 Forzar recarga</button>
+    </div>
+    <div id="listaProductos" class="productos-grid">Cargando productos...</div>
+    <div class="carrito">
+        <h3>Carrito actual</h3>
+        <div id="carritoItems"></div>
+        <div class="total">Total: $<span id="totalCarrito">0</span></div>
+        <button id="confirmarVenta" class="btn-vender">✅ Confirmar venta</button>
+    </div>
+</div>
+<nav>
+    <a href="./index.html">Ventas</a>
+    <a href="./inventario.html">Inventario</a>
+    <a href="./turno.html">Turno</a>
+</nav>
+<script src="./app.js"></script>
+<script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js');
+</script>
+</body>
+</html>

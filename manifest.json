@@ -1,0 +1,8 @@
+{
+  "name": "Mi Tienda",
+  "short_name": "Tienda",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "theme_color": "#2c7da0",
+  "background_color": "#ffffff"
+}

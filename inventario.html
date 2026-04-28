@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="./manifest.json">
+    <title>Inventario - Mi Tienda</title>
+    <link rel="stylesheet" href="./style.css">
+    <style>.btn-peligro { background-color: #cc0000; margin-left: 10px; }</style>
+</head>
+<body>
+<div class="container">
+    <h1>📦 Inventario</h1>
+    <button id="btnRefrescar" style="background-color: #555;">🔄 Refrescar</button>
+    <button id="btnResetDB" class="btn-peligro">⚠️ Resetear Base de Datos</button>
+    <div id="listaInventario" class="productos-grid">Cargando...</div>
+</div>
+<nav>
+    <a href="./index.html">Ventas</a>
+    <a href="./inventario.html">Inventario</a>
+    <a href="./turno.html">Turno</a>
+</nav>
+<script>
+    let db = null;
+    function conectar() {
+        return new Promise((resolve) => {
+            if (db) resolve(db);
+            const req = indexedDB.open("TiendaDB", 3);
+            req.onupgradeneeded = (e) => {
+                db = e.target.result;
+                if (!db.objectStoreNames.contains("productos")) {
+                    const s = db.createObjectStore("productos", { keyPath: "id", autoIncrement: true });
+                    s.createIndex("nombre", "nombre");
+                    s.add({ nombre: "Arroz", tipo: "granel", precio_kg: 2.5, stock_kg: 50 });
+                    s.add({ nombre: "Lata de atún", tipo: "unidad", precio_unidad: 1.2, stock_unidades: 30 });
+                }
+                if (!db.objectStoreNames.contains("ventas")) db.createObjectStore("ventas", { keyPath: "id", autoIncrement: true });
+            };
+            req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+        });
+    }
+    async function mostrar() {
+        const grid = document.getElementById("listaInventario");
+        grid.innerHTML = "Cargando...";
+        await conectar();
+        const tx = db.transaction("productos", "readonly");
+        const productos = await new Promise(resolve => {
+            const req = tx.objectStore("productos").getAll();
+            req.onsuccess = () => resolve(req.result);
+        });
+        if (productos.length === 0) { grid.innerHTML = "<p>Sin productos. Presione 'Resetear'.</p>"; return; }
+        grid.innerHTML = "";
+        for (let p of productos) {
+            const card = document.createElement("div");
+            card.className = "producto-card";
+            let stock = (p.tipo === "granel") ? `${p.stock_kg} kg` : `${p.stock_unidades} ud`;
+            let precio = (p.tipo === "granel") ? `$${p.precio_kg}/kg` : `$${p.precio_unidad}/ud`;
+            card.innerHTML = `<strong>${p.nombre}</strong><br>Stock: ${stock}<br><small>${precio}</small><button data-id="${p.id}" class="reponer">➕ Reponer</button>`;
+            grid.appendChild(card);
+        }
+        document.querySelectorAll(".reponer").forEach(btn => {
+            btn.onclick = async () => {
+                const id = parseInt(btn.dataset.id);
+                const txw = db.transaction("productos", "readwrite");
+                const prod = await new Promise(resolve => {
+                    const req = txw.objectStore("productos").get(id);
+                    req.onsuccess = () => resolve(req.result);
+                });
+                if (!prod) return;
+                let cant;
+                if (prod.tipo === "granel") {
+                    cant = parseFloat(prompt(`Reponer ${prod.nombre} (kg):`, "1"));
+                    if (!isNaN(cant) && cant > 0) prod.stock_kg += cant;
+                    else return;
+                } else {
+                    cant = parseInt(prompt(`Reponer ${prod.nombre} (unidades):`, "1"));
+                    if (!isNaN(cant) && cant > 0) prod.stock_unidades += cant;
+                    else return;
+                }
+                txw.objectStore("productos").put(prod);
+                mostrar();
+            };
+        });
+    }
+    async function resetear() {
+        if (confirm("⚠️ Borrará todo. ¿Continuar?")) {
+            if (db) db.close();
+            await indexedDB.deleteDatabase("TiendaDB");
+            alert("Base de datos eliminada. Se recargará.");
+            location.reload();
+        }
+    }
+    window.addEventListener("DOMContentLoaded", async () => {
+        await conectar();
+        await mostrar();
+        document.getElementById("btnRefrescar").onclick = mostrar;
+        document.getElementById("btnResetDB").onclick = resetear;
+    });
+</script>
+<script> if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js'); </script>
+</body>
+</html>

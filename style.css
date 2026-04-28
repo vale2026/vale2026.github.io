@@ -1,0 +1,13 @@
+* { box-sizing: border-box; }
+body { font-family: Arial, sans-serif; margin: 0; padding: 60px 0 60px; background: #f5f5f5; }
+.container { max-width: 600px; margin: auto; padding: 20px; }
+.productos-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin: 15px 0; }
+.producto-card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); text-align:center; }
+button { background: #2c7da0; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 5px; }
+.btn-vender { background: #2a9d8f; font-size:1.2em; }
+nav { position: fixed; bottom:0; left:0; width:100%; background:#ddd; display:flex; justify-content:space-around; padding:10px; }
+nav a { text-decoration:none; color:#1f5068; font-weight:bold; }
+input, select { width:100%; padding:8px; margin:5px 0; border-radius:6px; border:1px solid #ccc; }
+.carrito { margin-top:20px; background:#eef; padding:10px; border-radius:8px; }
+.total { font-size:1.4em; font-weight:bold; text-align:right; }
+.turno-info { background:#ffe4b5; padding:8px; border-radius:8px; margin-bottom:10px; }
